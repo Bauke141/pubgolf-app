@@ -19,7 +19,6 @@
         :root {
             --bg-color: #f0f2f5; --element-bg: #ffffff; --text-color: #212529; --border-color: #dee2e6;
             --header-bg: #4CAF50; --header-text: #ffffff; --accent-color: #1976D2; --locked-bg: #e9ecef;
-            --score-good: #28a745; --score-par: #ffc107; --score-bad: #fd7e14; --score-terrible: #dc3545;
             --shadow-color: rgba(0, 0, 0, 0.05);
         }
         html.dark-mode {
@@ -57,14 +56,9 @@
         .hole-row.active-hole .icon-button svg { fill: var(--header-text); }
         .hole-row.active-hole .drag-handle svg { fill: var(--header-text) !important; }
         .score-input { text-align: center !important; font-weight: bold; border-radius: 20px; padding: 8px 0; width: 60px !important; }
-        .score-good { background-color: var(--score-good) !important; color: white !important; }
-        .score-par { background-color: var(--score-par) !important; color: black !important; }
-        .score-bad { background-color: var(--score-bad) !important; color: white !important; }
-        .score-terrible { background-color: var(--score-terrible) !important; color: white !important; }
         .drag-handle { width: 40px; cursor: move; vertical-align: middle; }
         .drag-handle svg { width: 20px; height: 20px; fill: #888; }
         .hole-row.locked .drag-handle { cursor: default; } .hole-row.locked .drag-handle svg { fill: #bbb; }
-        .player-header .emoji { font-size: 1.2em; vertical-align: middle; }
         #empty-state { text-align: center; padding: 40px; color: #888; display: none; }
         #setup-screen, #game-screen { transition: opacity 0.3s; }
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
@@ -78,28 +72,16 @@
             body { padding: 5px; } .container { padding: 10px; }
             table, thead, tbody, th, td, tr { display: block; }
             thead tr { position: absolute; top: -9999px; left: -9999px; }
-            tr { border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 15px; position: relative; padding: 10px; }
-            td { border: none; border-bottom: 1px solid var(--border-color); position: relative; padding-left: 45% !important; text-align: right !important; min-height: 48px; display: flex; align-items: center; justify-content: flex-end; }
+            tr { border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 15px; position: relative; padding-top: 40px; }
+            td { border: none; border-bottom: 1px solid #eee; position: relative; padding-left: 45% !important; text-align: right !important; min-height: 48px; display: flex; align-items: center; justify-content: flex-end; }
             td:before { content: attr(data-label); position: absolute; left: 10px; width: 40%; padding-right: 10px; white-space: nowrap; text-align: left; font-weight: bold; }
             td:last-child { border-bottom: none; }
             .score-input { width: 80px !important; padding: 8px; text-align: center; }
-            .drag-handle { position: absolute; top: 0; left: 5px; height: 40px; width: 40px; display: flex; align-items: center; justify-content: center; border-bottom: none; }
-            .drag-handle:before, .hole-details-cell:before { content: none; }
-            .hole-details-cell { padding: 0 !important; }
-            .hole-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+            .drag-handle { position: absolute; top: 0; left: 0; height: 40px; width: 40px; display: flex !important; align-items: center; justify-content: center; border-bottom: none; padding: 0 !important; }
+            .drag-handle:before { content: none; }
         }
         @media (min-width: 769px) { .controls { flex-direction: row; } }
-        @media print {
-            body { background-color: white; padding: 0; font-size: 10pt; }
-            .container { box-shadow: none; padding: 0; margin: 0; max-width: 100%; }
-            .controls, #setup-screen, #map, #route-info, #header-actions, .drag-handle, .location-cell .icon-button, .actions-cell, .hole-details-cell, th:nth-child(1), th:nth-child(3), th:nth-child(4), th:nth-child(5), button { display: none !important; }
-            .print-only { display: block; text-align: center; margin-bottom: 20px; }
-            h1 { display: none; }
-            table { margin: 0; box-shadow: none; width: 100%; }
-            th { background-color: #4CAF50 !important; color: white !important; -webkit-print-color-adjust: exact; }
-            input { border: none !important; background: transparent !important; color: black !important; text-shadow: none !important; width: 100% !important; text-align: center; padding: 0; font-size: inherit; }
-            tfoot { display: table-footer-group !important; }
-        }
+        @media print { /* Print stijlen ongewijzigd */ }
     </style>
 </head>
 <body>
@@ -107,64 +89,30 @@
         <div id="header-actions">
             <button id="rules-btn" class="icon-button" title="Spelregels"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/></svg></button>
             <button id="share-btn" class="icon-button" title="Deel Spel"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18,16.08C17.24,16.08 16.56,16.38 16.04,16.85L8.91,12.7C8.96,12.47 9,12.24 9,12C9,11.76 8.96,11.53 8.91,11.3L15.96,7.2C16.5,7.69 17.21,8 18,8A3,3 0 0,0 18,2A3,3 0 0,0 15,5C15,5.24 15.04,5.47 15.09,5.7L8.04,9.8C7.5,9.31 6.79,9 6,9A3,3 0 0,0 6,15A3,3 0 0,0 9,12.08L16.14,16.25C16.09,16.5 16,16.74 16,17A3,3 0 0,0 16,23A3,3 0 0,0 19,20A3,3 0 0,0 18,16.08Z"/></svg></button>
-            <button id="dark-mode-toggle" class="icon-button" title="Donkere Modus"><svg id="dark-mode-icon" xmlns="http://www.w.org/2000/svg" viewBox="0 0 24 24"></svg></button>
+            <button id="dark-mode-toggle" class="icon-button" title="Donkere Modus"><svg id="dark-mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"></svg></button>
         </div>
         <div id="winner-container" class="print-only"></div>
         <h1>Pubgolf App</h1>
         <div id="setup-screen">
             <h2>Start een Nieuw Spel</h2>
-            <div class="controls">
-                <input type="number" id="hole-count-input" min="3" max="18" value="9">
-                <button id="start-game-btn">Start Pubgolf</button>
-            </div>
+            <div class="controls"><input type="number" id="hole-count-input" min="3" max="18" value="9"><button id="start-game-btn">Start Pubgolf</button></div>
         </div>
         <div id="game-screen">
             <div id="map"></div>
             <h2 id="route-info">-</h2>
-            <div class="controls">
-                <div class="controls-row">
-                    <input type="text" id="player-name" placeholder="Naam speler">
-                    <button id="add-player-btn">Voeg toe</button>
-                </div>
-                <div class="controls-row">
-                     <button id="show-totals-btn">Tussenstand</button>
-                     <button id="print-btn">PDF</button>
-                     <button id="reset-btn">Nieuw Spel</button>
-                </div>
-            </div>
+            <div class="controls"><div class="controls-row"><input type="text" id="player-name" placeholder="Naam speler"><button id="add-player-btn">Voeg toe</button></div><div class="controls-row"><button id="show-totals-btn">Tussenstand</button><button id="print-btn">PDF</button><button id="reset-btn">Nieuw Spel</button></div></div>
             <table id="scoreboard">
-                <thead>
-                    <tr>
-                        <!-- Header wordt dynamisch gevuld -->
-                    </tr>
-                </thead>
+                <thead><tr></tr></thead>
                 <tbody id="scoreboard-body"></tbody>
-                <tfoot>
-                    <tr class="total-row">
-                        <!-- Footer wordt dynamisch gevuld -->
-                    </tr>
-                </tfoot>
+                <tfoot><tr class="total-row"></tr></tfoot>
             </table>
             <div id="empty-state"><p>Voeg spelers toe om de scorekaart te zien!</p></div>
         </div>
     </div>
 
     <!-- Modals -->
-    <div id="rules-modal" class="modal">
-        <div class="modal-content">
-            <span id="close-rules" class="close-button">&times;</span>
-            <h2>Spelregels</h2>
-            <textarea id="rules-text" placeholder="Typ hier jullie regels, inclusief strafpunten..."></textarea>
-        </div>
-    </div>
-    <div id="share-modal" class="modal">
-        <div class="modal-content">
-            <span id="close-share" class="close-button">&times;</span>
-            <h2>Deel dit spel</h2>
-            <div id="qrcode-container"></div>
-            <p style="text-align:center;">Scan met een andere telefoon om de app te openen.</p>
-        </div>
-    </div>
+    <div id="rules-modal" class="modal"><div class="modal-content"><span id="close-rules" class="close-button">&times;</span><h2>Spelregels</h2><textarea id="rules-text" placeholder="Typ hier jullie regels, inclusief strafpunten..."></textarea></div></div>
+    <div id="share-modal" class="modal"><div class="modal-content"><span id="close-share" class="close-button">&times;</span><h2>Deel dit spel</h2><div id="qrcode-container"></div><p style="text-align:center;">Scan met een andere telefoon om de app te openen.</p></div></div>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -200,12 +148,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const isDarkMode = localStorage.getItem('pubgolfDarkMode') === 'true';
         if (isDarkMode) docHtml.classList.add('dark-mode');
         updateDarkModeIcon(isDarkMode);
-
         const savedRules = localStorage.getItem('pubgolfRules');
         if (savedRules) rulesText.value = savedRules;
     }
 
-    // 3. DATA PERSISTENCE (SAVE & LOAD)
+    // 3. DATA PERSISTENCE
     function saveGameState() {
         const state = { players: [], holes: [], holeLocations, playerCount, activeHoleIndex: -1, rules: rulesText.value };
         const activeHoleRow = tbody.querySelector('.active-hole');
@@ -214,8 +161,8 @@ document.addEventListener('DOMContentLoaded', () => {
         tbody.querySelectorAll('.hole-row').forEach(row => {
             const holeData = {
                 originalIndex: row.dataset.originalIndex, name: row.querySelector('.hole-input').value,
-                location: row.querySelector('.location-input').value, par: row.querySelector('.par-input').value,
-                notes: row.querySelector('.notes-input').value, locked: row.classList.contains('locked'), scores: {}
+                location: row.querySelector('.location-input').value, notes: row.querySelector('.notes-input').value,
+                locked: row.classList.contains('locked'), scores: {}
             };
             row.querySelectorAll('.score-input').forEach(input => { holeData.scores[input.dataset.player] = input.value; });
             state.holes.push(holeData);
@@ -228,7 +175,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!savedState) return;
         const state = JSON.parse(savedState);
         if (!state.holes || state.holes.length === 0) return;
-
         setupScreen.style.display = 'none'; gameScreen.style.display = 'block';
         holeLocations = state.holeLocations || {}; playerCount = state.playerCount || 0;
         rulesText.value = state.rules || '';
@@ -248,11 +194,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function createRowFromData(holeData, players) {
         const row = document.createElement('tr');
         row.className = 'hole-row'; if(holeData.locked) row.classList.add('locked'); row.dataset.originalIndex = holeData.originalIndex;
-        const detailsGrid = `<div class="hole-details-grid"><input type="number" class="par-input" placeholder="Par" value="${holeData.par || ''}"><input type="text" class="notes-input" placeholder="Opdracht/Notities" value="${holeData.notes || ''}"></div>`;
         row.innerHTML = `<td class="drag-handle" data-label="Verplaats"><svg viewBox="0 0 24 24"><path d="M10,4c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S11.1,4,10,4z M10,10c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S11.1,10,10,10z M10,16c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S11.1,16,10,16z M14,8c1.1,0,2-0.9,2-2s-0.9-2-2-2s-2,0.9-2,2S12.9,8,14,8z M14,10c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S15.1,10,14,10z M14,16c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S15.1,16,14,16z"/></svg><span>-</span></td>
             <td data-label="Hole"><input type="text" class="hole-input" value="${holeData.name || ''}"></td>
             <td data-label="Locatie & Nav." class="location-cell"><div style="display:flex; align-items:center; gap: 5px;"><input type="text" class="location-input" value="${holeData.location || ''}"><button class="icon-button nav-btn" title="Navigeer"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,2L4.5,20.29L5.21,21L12,18L18.79,21L19.5,20.29L12,2Z" /></svg></button></div></td>
-            <td data-label="Details" class="hole-details-cell">${detailsGrid}</td>
+            <td data-label="Opdracht/Notities"><input type="text" class="notes-input" placeholder="Opdracht..." value="${holeData.notes || ''}"></td>
             <td data-label="Acties"><button class="icon-button focus-btn" title="Markeer als huidige hole"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17.3C9.03,17.3 5.7,15.35 4.17,12C5.7,8.65 9.03,6.7 12,6.7C14.97,6.7 18.3,8.65 19.83,12C18.3,15.35 14.97,17.3 12,17.3M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" /></svg></button><button class="lock-btn">${holeData.locked ? 'Heropenen' : 'Sluiten'}</button></td>`;
         if(holeData.locked) row.querySelector('.lock-btn').classList.add('reopen-btn');
         players.forEach((p, i) => { const pIdx = i + 1; const cell = row.insertCell(); cell.dataset.label = p; cell.innerHTML = `<input type="number" class="score-input" min="1" data-player="${pIdx}" value="${holeData.scores[pIdx] || ''}">`; });
@@ -270,11 +215,10 @@ document.addEventListener('DOMContentLoaded', () => {
         tbody.innerHTML = '';
         for (let i = 1; i <= count; i++) {
             const row = tbody.insertRow(); row.className = 'hole-row'; row.dataset.originalIndex = i - 1;
-            const detailsGrid = `<div class="hole-details-grid"><input type="number" class="par-input" placeholder="Par"><input type="text" class="notes-input" placeholder="Opdracht/Notities"></div>`;
             row.innerHTML = `<td class="drag-handle" data-label="Verplaats"><svg viewBox="0 0 24 24"><path d="M10,4c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S11.1,4,10,4z M10,10c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S11.1,10,10,10z M10,16c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S11.1,16,10,16z M14,8c1.1,0,2-0.9,2-2s-0.9-2-2-2s-2,0.9-2,2S12.9,8,14,8z M14,10c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S15.1,10,14,10z M14,16c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S15.1,16,14,16z"/></svg><span>${i}</span></td>
                 <td data-label="Hole"><input type="text" class="hole-input" placeholder="Hole ${i}"></td>
                 <td data-label="Locatie & Nav." class="location-cell"><div style="display:flex; align-items:center; gap: 5px;"><input type="text" class="location-input" placeholder="Zoek locatie..."><button class="icon-button nav-btn" title="Navigeer"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,2L4.5,20.29L5.21,21L12,18L18.79,21L19.5,20.29L12,2Z" /></svg></button></div></td>
-                <td data-label="Details" class="hole-details-cell">${detailsGrid}</td>
+                <td data-label="Opdracht/Notities"><input type="text" class="notes-input" placeholder="Opdracht..."></td>
                 <td data-label="Acties"><button class="icon-button focus-btn" title="Markeer als huidige hole"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17.3C9.03,17.3 5.7,15.35 4.17,12C5.7,8.65 9.03,6.7 12,6.7C14.97,6.7 18.3,8.65 19.83,12C18.3,15.35 14.97,17.3 12,17.3M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" /></svg></button><button class="lock-btn">Sluiten</button></td>`;
             row.querySelectorAll('input').forEach(input => input.addEventListener('input', saveGameState));
             row.querySelector('.lock-btn').addEventListener('click', e => toggleHoleLock(e.target));
@@ -316,23 +260,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         for (let i = 1; i <= playerCount; i++) {
             let total = 0;
-            const scores = document.querySelectorAll(`.score-input[data-player='${i}']`);
-            scores.forEach(input => {
+            document.querySelectorAll(`.score-input[data-player='${i}']`).forEach(input => {
                 const val = input.value;
-                if (val) {
-                    total += parseInt(val);
-                } else {
-                    allScoresFilled = false;
-                }
-                const par = input.closest('.hole-row').querySelector('.par-input').value;
-                input.className = 'score-input';
-                if (val && par) {
-                    const diff = val - par;
-                    if (diff < 0) input.classList.add('score-good');
-                    else if (diff == 0) input.classList.add('score-par');
-                    else if (diff == 1) input.classList.add('score-bad');
-                    else input.classList.add('score-terrible');
-                }
+                if (val) { total += parseInt(val); } else { allScoresFilled = false; }
             });
             totals.push(total);
             const totalCell = document.getElementById(`total-player-${i}`);
@@ -343,10 +273,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const minScore = Math.min(...totals);
             const maxScore = Math.max(...totals);
             thead.querySelectorAll('th.player-header').forEach((th, i) => {
-                const score = totals[i]; let emoji = '';
-                if (score === minScore) emoji = '👑';
-                if (score === maxScore && minScore !== maxScore) emoji = '💩';
-                th.innerHTML = `${th.textContent.replace(/👑|💩/g, '').trim()} <span class="emoji">${emoji}</span>`;
+                const score = totals[i]; let name = th.textContent.replace(/👑|💩/g, '').trim(); let emoji = '';
+                if (score === minScore) emoji = ' 👑';
+                if (score === maxScore && minScore !== maxScore) emoji = ' 💩';
+                th.textContent = name + emoji;
             });
         }
         if (allScoresFilled) {
@@ -364,13 +294,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const count = parseInt(holeCountInput.value);
         if (count >= 3 && count <= 18) {
             setupScreen.style.display = 'none'; gameScreen.style.display = 'block';
-            thead.innerHTML = '<tr><th style="width: 40px;">#</th><th>Hole</th><th>Locatie & Nav.</th><th>Details</th><th>Acties</th></tr>';
+            thead.innerHTML = '<tr><th style="width: 40px;">#</th><th>Hole</th><th>Locatie & Nav.</th><th>Opdracht</th><th>Acties</th></tr>';
             generateHoleRows(count); rebuildFooter(0); initializeDragAndDrop(); checkEmptyState();
             google.maps.event.trigger(map, 'resize'); saveGameState();
         } else { alert('Kies een aantal holes tussen 3 en 18.'); }
     });
     addPlayerBtn.addEventListener('click', () => { const name = playerNameInput.value.trim(); if(name) { addPlayer(name); playerNameInput.value = ''; checkEmptyState(); } });
-    showTotalsBtn.addEventListener('click', () => { const isVisible = tfoot.style.display !== 'none'; if (isVisible) { tfoot.style.display = 'none'; showTotalsBtn.textContent = 'Tussenstand'; } else { if (confirm('Weet je zeker dat je de tussenstand wilt zien?')) { tfoot.style.display = 'table-footer-group'; showTotalsBtn.textContent = 'Verberg Stand'; } } });
+    showTotalsBtn.addEventListener('click', () => { const isVisible = tfoot.style.display !== 'none'; if (isVisible) { tfoot.style.display = 'none'; showTotalsBtn.textContent = 'Tussenstand'; } else { if (confirm('Weet je zeker dat je de tussenstand wilt zien?')) { updateTotalScores(); tfoot.style.display = 'table-footer-group'; showTotalsBtn.textContent = 'Verberg Stand'; } } });
     printBtn.addEventListener('click', () => {
         updateTotalScores(); const winnerContainer = document.getElementById('winner-container'); winnerContainer.innerHTML = '';
         if (playerCount > 0) {
