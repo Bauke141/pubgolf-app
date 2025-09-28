@@ -29,8 +29,8 @@
         * { box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 10px; -webkit-font-smoothing: antialiased; transition: background-color 0.3s, color 0.3s; }
         .container { max-width: 1200px; margin: auto; background: var(--element-bg); padding: 15px; border-radius: 12px; box-shadow: 0 4px 12px var(--shadow-color); transition: background-color 0.3s; }
-        h1, h2 { text-align: center; color: var(--header-bg); margin-top: 10px; margin-bottom: 15px; }
-        .print-only { display: none; }
+        h1, h2, h3 { text-align: center; color: var(--header-bg); margin-top: 10px; margin-bottom: 15px; }
+        h3 { color: var(--text-color); }
         #map { height: 350px; width: 100%; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--border-color); background-color: #e9e9e9; }
         html.dark-mode #map { filter: invert(1) hue-rotate(180deg); }
         #route-info { text-align: center; font-size: 1.1em; font-weight: bold; color: var(--accent-color); margin-bottom: 20px; }
@@ -38,9 +38,10 @@
         .controls-row { display: flex; gap: 10px; }
         input, button, textarea { width: 100%; padding: 12px 15px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 16px; -webkit-appearance: none; background-color: var(--element-bg); color: var(--text-color); font-family: inherit; }
         button { background-color: var(--header-bg); color: var(--header-text); cursor: pointer; border: none; transition: background-color 0.2s, transform 0.1s; font-weight: bold; }
+        button:disabled { background-color: #9E9E9E; cursor: not-allowed; }
         button:active { transform: scale(0.98); }
-        button:hover { background-color: #45a049; }
-        html.dark-mode button:hover { background-color: #2E7D32; }
+        button:hover:not(:disabled) { background-color: #45a049; }
+        html.dark-mode button:hover:not(:disabled) { background-color: #2E7D32; }
         .icon-button { background: none; border: none; padding: 5px; width: auto; cursor: pointer; opacity: 0.7; }
         .icon-button:hover { opacity: 1; }
         .icon-button svg { width: 24px; height: 24px; fill: var(--text-color); }
@@ -58,7 +59,6 @@
         .drag-handle { width: 40px; cursor: move; vertical-align: middle; }
         .drag-handle svg { width: 20px; height: 20px; fill: #888; }
         .hole-row.locked .drag-handle { cursor: default; } .hole-row.locked .drag-handle svg { fill: #bbb; }
-        #empty-state { text-align: center; padding: 40px; color: #888; display: none; }
         #setup-screen, #game-screen { transition: opacity 0.3s; }
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
         .modal-content { background-color: var(--element-bg); margin: 20% auto; padding: 20px; border: 1px solid var(--border-color); width: 90%; max-width: 500px; border-radius: 12px; position: relative; }
@@ -71,7 +71,9 @@
         .ranking-name { font-weight: bold; }
         .ranking-score { font-size: 1.2em; }
         .ranking-emoji { font-size: 1.5em; width: 30px; text-align: center; }
-
+        #player-setup-list { list-style: none; padding: 0; margin: 20px 0; }
+        #player-setup-list li { display: flex; justify-content: space-between; align-items: center; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 5px; }
+        
         @media (max-width: 768px) {
             body { padding: 5px; } .container { padding: 10px; }
             table, thead, tbody, th, td, tr { display: block; }
@@ -85,7 +87,6 @@
             .drag-handle:before { content: none; }
         }
         @media (min-width: 769px) { .controls { flex-direction: row; } }
-        @media print { /* Print stijlen ongewijzigd */ }
     </style>
 </head>
 <body>
@@ -95,28 +96,42 @@
             <button id="share-btn" class="icon-button" title="Deel Spel"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18,16.08C17.24,16.08 16.56,16.38 16.04,16.85L8.91,12.7C8.96,12.47 9,12.24 9,12C9,11.76 8.96,11.53 8.91,11.3L15.96,7.2C16.5,7.69 17.21,8 18,8A3,3 0 0,0 18,2A3,3 0 0,0 15,5C15,5.24 15.04,5.47 15.09,5.7L8.04,9.8C7.5,9.31 6.79,9 6,9A3,3 0 0,0 6,15A3,3 0 0,0 9,12.08L16.14,16.25C16.09,16.5 16,16.74 16,17A3,3 0 0,0 16,23A3,3 0 0,0 19,20A3,3 0 0,0 18,16.08Z"/></svg></button>
             <button id="dark-mode-toggle" class="icon-button" title="Donkere Modus"><svg id="dark-mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"></svg></button>
         </div>
-        <div id="winner-container" class="print-only"></div>
         <h1>Pubgolf App</h1>
+
+        <!-- NIEUW SETUP SCHERM -->
         <div id="setup-screen">
-            <h2>Start een Nieuw Spel</h2>
-            <div class="controls"><input type="number" id="hole-count-input" min="3" max="18" value="9"><button id="start-game-btn">Start Pubgolf</button></div>
+            <h2>Nieuw Spel Opzetten</h2>
+            <div class="controls">
+                <div>
+                    <h3>1. Kies aantal holes</h3>
+                    <input type="number" id="hole-count-input" min="3" max="18" value="9">
+                </div>
+                <div>
+                    <h3>2. Voeg spelers toe</h3>
+                    <div class="controls-row">
+                        <input type="text" id="player-setup-name" placeholder="Naam speler">
+                        <button id="add-player-setup-btn">Voeg toe</button>
+                    </div>
+                    <ul id="player-setup-list"></ul>
+                </div>
+                <button id="start-game-btn" disabled>Start Spel</button>
+            </div>
         </div>
+
         <div id="game-screen">
             <div id="map"></div>
             <h2 id="route-info">-</h2>
-            <div class="controls"><div class="controls-row"><input type="text" id="player-name" placeholder="Naam speler"><button id="add-player-btn">Voeg toe</button></div><div class="controls-row"><button id="show-totals-btn">Tussenstand</button><button id="print-btn">PDF</button><button id="reset-btn">Nieuw Spel</button></div></div>
+            <div class="controls"><div class="controls-row"><button id="show-totals-btn">Tussenstand</button><button id="reset-btn">Nieuw Spel</button></div></div>
             <table id="scoreboard">
                 <thead><tr></tr></thead>
                 <tbody id="scoreboard-body"></tbody>
-                <tfoot class="print-only"><tr class="total-row"></tr></tfoot>
             </table>
-            <div id="empty-state"><p>Voeg spelers toe om de scorekaart te zien!</p></div>
         </div>
     </div>
 
     <!-- Modals -->
-    <div id="rules-modal" class="modal"><div class="modal-content"><span id="close-rules" class="close-button">&times;</span><h2>Spelregels</h2><textarea id="rules-text" placeholder="Typ hier jullie regels, inclusief strafpunten..."></textarea></div></div>
-    <div id="share-modal" class="modal"><div class="modal-content"><span id="close-share" class="close-button">&times;</span><h2>Deel dit spel</h2><div id="qrcode-container"></div><p style="text-align:center;">Scan met een andere telefoon om de app te openen.</p></div></div>
+    <div id="rules-modal" class="modal"><div class="modal-content"><span id="close-rules" class="close-button">&times;</span><h2>Spelregels</h2><textarea id="rules-text" placeholder="Typ hier jullie regels..."></textarea></div></div>
+    <div id="share-modal" class="modal"><div class="modal-content"><span id="close-share" class="close-button">&times;</span><h2>Deel dit spel</h2><div id="qrcode-container"></div><p style="text-align:center;">Scan met een andere telefoon.</p></div></div>
     <div id="scoreboard-modal" class="modal"><div class="modal-content"><span id="close-scoreboard" class="close-button">&times;</span><h2>Tussenstand</h2><ul id="ranking-list" class="ranking-list"></ul></div></div>
 
 <script>
@@ -125,16 +140,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const docHtml = document.documentElement;
     const setupScreen = document.getElementById('setup-screen'), gameScreen = document.getElementById('game-screen');
     const holeCountInput = document.getElementById('hole-count-input'), startGameBtn = document.getElementById('start-game-btn');
-    const addPlayerBtn = document.getElementById('add-player-btn'), resetBtn = document.getElementById('reset-btn');
-    const printBtn = document.getElementById('print-btn'), showTotalsBtn = document.getElementById('show-totals-btn');
-    const playerNameInput = document.getElementById('player-name'), routeInfo = document.getElementById('route-info');
+    const addPlayerSetupBtn = document.getElementById('add-player-setup-btn'), playerSetupNameInput = document.getElementById('player-setup-name'), playerSetupList = document.getElementById('player-setup-list');
+    const resetBtn = document.getElementById('reset-btn'), showTotalsBtn = document.getElementById('show-totals-btn');
+    const routeInfo = document.getElementById('route-info');
     const thead = document.querySelector('#scoreboard thead tr'), tbody = document.getElementById('scoreboard-body');
-    const tfoot = document.querySelector('#scoreboard tfoot tr'), emptyState = document.getElementById('empty-state');
     const darkModeToggle = document.getElementById('dark-mode-toggle'), darkModeIcon = document.getElementById('dark-mode-icon');
     const rulesBtn = document.getElementById('rules-btn'), rulesModal = document.getElementById('rules-modal'), closeRules = document.getElementById('close-rules'), rulesText = document.getElementById('rules-text');
     const shareBtn = document.getElementById('share-btn'), shareModal = document.getElementById('share-modal'), closeShare = document.getElementById('close-share'), qrcodeContainer = document.getElementById('qrcode-container');
     const scoreboardModal = document.getElementById('scoreboard-modal'), closeScoreboard = document.getElementById('close-scoreboard'), rankingList = document.getElementById('ranking-list');
     let map, directionsService, directionsRenderer, playerCount = 0, markers = [], holeLocations = {};
+    let setupPlayers = [];
 
     const ICONS = {
         sun: '<path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,2L14.39,4.39L17.66,4.39L19.61,7.24L20.5,10.5L19.61,13.76L17.66,16.61L14.39,16.61L12,19L9.61,16.61L6.34,16.61L4.39,13.76L3.5,10.5L4.39,7.24L6.34,4.39L9.61,4.39L12,2M12,4.15L10.74,6.24L8.3,6.63L9.73,8.79L9.11,11.21L11.2,12.5L13.28,11.21L12.67,8.79L14.1,6.63L11.65,6.24L12,4.15Z" />',
@@ -194,8 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (state.activeHoleIndex > -1 && tbody.children[state.activeHoleIndex]) {
             tbody.children[state.activeHoleIndex].classList.add('active-hole');
         }
-        initializeDragAndDrop();
-        updateVisualsAfterDrag(false); checkEmptyState();
+        initializeDragAndDrop(); updateVisualsAfterDrag(false);
     }
 
     function createRowFromData(holeData, players) {
@@ -208,7 +222,6 @@ document.addEventListener('DOMContentLoaded', () => {
             <td data-label="Acties"><button class="icon-button focus-btn" title="Markeer als huidige hole"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17.3C9.03,17.3 5.7,15.35 4.17,12C5.7,8.65 9.03,6.7 12,6.7C14.97,6.7 18.3,8.65 19.83,12C18.3,15.35 14.97,17.3 12,17.3M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" /></svg></button><button class="lock-btn">${holeData.locked ? 'Heropenen' : 'Sluiten'}</button></td>`;
         if(holeData.locked) row.querySelector('.lock-btn').classList.add('reopen-btn');
         players.forEach((p, i) => { const pIdx = i + 1; const cell = row.insertCell(); cell.dataset.label = p; cell.innerHTML = `<input type="number" class="score-input" min="1" data-player="${pIdx}" value="${holeData.scores[pIdx] || ''}">`; });
-        
         row.querySelectorAll('input').forEach(input => input.addEventListener('input', saveGameState));
         row.querySelector('.lock-btn').addEventListener('click', e => toggleHoleLock(e.target));
         row.querySelector('.focus-btn').addEventListener('click', e => toggleHoleFocus(e.target));
@@ -255,21 +268,51 @@ document.addEventListener('DOMContentLoaded', () => {
     function toggleHoleFocus(button) { const clickedRow = button.closest('.hole-row'); const wasActive = clickedRow.classList.contains('active-hole'); document.querySelectorAll('.active-hole').forEach(row => row.classList.remove('active-hole')); if (!wasActive) clickedRow.classList.add('active-hole'); updateMarkers(); saveGameState(); }
     function navigateToHole(button) { const row = button.closest('.hole-row'); const location = row.querySelector('.location-input').value; if (location) window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(location)}&travelmode=walking`, '_blank'); else alert('Voer eerst een locatie in voor deze hole.'); }
     function updateDarkModeIcon(isDark) { darkModeIcon.innerHTML = isDark ? ICONS.sun : ICONS.moon; }
-    function checkEmptyState() { emptyState.style.display = playerCount === 0 ? 'block' : 'none'; }
     
-    // 5. BUTTON EVENT LISTENERS
+    // 5. SETUP SCREEN LOGIC
+    function renderSetupPlayerList() {
+        playerSetupList.innerHTML = '';
+        setupPlayers.forEach((name, index) => {
+            const li = document.createElement('li');
+            li.textContent = name;
+            const removeBtn = document.createElement('button');
+            removeBtn.textContent = 'Verwijder';
+            removeBtn.style.width = 'auto';
+            removeBtn.style.backgroundColor = '#757575';
+            removeBtn.onclick = () => {
+                setupPlayers.splice(index, 1);
+                renderSetupPlayerList();
+            };
+            li.appendChild(removeBtn);
+            playerSetupList.appendChild(li);
+        });
+        startGameBtn.disabled = setupPlayers.length === 0;
+    }
+
+    addPlayerSetupBtn.addEventListener('click', () => {
+        const name = playerSetupNameInput.value.trim();
+        if (name && !setupPlayers.includes(name)) {
+            setupPlayers.push(name);
+            playerSetupNameInput.value = '';
+            renderSetupPlayerList();
+        }
+        playerSetupNameInput.focus();
+    });
+
+    // 6. BUTTON EVENT LISTENERS
     startGameBtn.addEventListener('click', () => {
         const count = parseInt(holeCountInput.value);
-        if (count >= 3 && count <= 18) {
-            setupScreen.style.display = 'none'; gameScreen.style.display = 'block';
-            thead.innerHTML = '<tr><th style="width: 40px;">#</th><th>Hole</th><th>Locatie & Nav.</th><th>Opdracht</th><th>Acties</th></tr>';
-            generateHoleRows(count); initializeDragAndDrop(); checkEmptyState();
-            google.maps.event.trigger(map, 'resize'); saveGameState();
-        } else { alert('Kies een aantal holes tussen 3 en 18.'); }
+        setupScreen.style.display = 'none'; gameScreen.style.display = 'block';
+        thead.innerHTML = '<tr><th style="width: 40px;">#</th><th>Hole</th><th>Locatie & Nav.</th><th>Opdracht</th><th>Acties</th></tr>';
+        generateHoleRows(count);
+        setupPlayers.forEach(name => addPlayer(name, false));
+        initializeDragAndDrop();
+        google.maps.event.trigger(map, 'resize'); 
+        saveGameState();
     });
-    addPlayerBtn.addEventListener('click', () => { const name = playerNameInput.value.trim(); if(name) { addPlayer(name); playerNameInput.value = ''; checkEmptyState(); } });
+    
     showTotalsBtn.addEventListener('click', () => {
-        if (playerCount === 0) { alert('Voeg eerst spelers toe!'); return; }
+        if (playerCount === 0) { alert('Er zijn geen spelers in het spel!'); return; }
         const scores = [];
         for (let i = 1; i <= playerCount; i++) {
             let total = 0;
@@ -277,8 +320,8 @@ document.addEventListener('DOMContentLoaded', () => {
             scores.push({ name: thead.children[4 + i].textContent, score: total });
         }
         scores.sort((a, b) => a.score - b.score);
-        const minScore = scores[0].score;
-        const maxScore = scores[scores.length - 1].score;
+        const minScore = scores.length > 0 ? scores[0].score : 0;
+        const maxScore = scores.length > 0 ? scores[scores.length - 1].score : 0;
 
         rankingList.innerHTML = '';
         scores.forEach(player => {
@@ -292,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         scoreboardModal.style.display = 'block';
     });
-    printBtn.addEventListener('click', () => { /* Print logic remains the same, but needs to populate a hidden tfoot first */ window.print(); });
+    
     resetBtn.addEventListener('click', () => { if (confirm('Weet je zeker dat je het hele spel wilt resetten? Alle data wordt gewist.')) { localStorage.clear(); window.location.reload(); } });
     darkModeToggle.addEventListener('click', () => { const isDark = docHtml.classList.toggle('dark-mode'); updateDarkModeIcon(isDark); localStorage.setItem('pubgolfDarkMode', isDark); });
     rulesBtn.addEventListener('click', () => { rulesModal.style.display = 'block'; });
