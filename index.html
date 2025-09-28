@@ -14,19 +14,19 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
-        /* ... (Alle CSS stijlen blijven exact hetzelfde als in de vorige versie) ... */
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; color: #333; margin: 0; padding: 10px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; color: #333; margin: 0; padding: 10px; -webkit-font-smoothing: antialiased; }
         .container { max-width: 1200px; margin: auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         h1, h2 { text-align: center; color: #2E7D32; margin-top: 10px; margin-bottom: 15px; }
         .print-only { display: none; }
-        #map { height: 350px; width: 100%; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; }
+        #map { height: 350px; width: 100%; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; background-color: #e9e9e9; }
         #route-info { text-align: center; font-size: 1.1em; font-weight: bold; color: #1976D2; margin-bottom: 20px; }
         .controls { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
         .controls-row { display: flex; gap: 10px; }
-        input[type="text"], input[type="number"], button { width: 100%; padding: 12px 15px; border-radius: 6px; border: 1px solid #ccc; font-size: 16px; }
+        input[type="text"], input[type="number"], button { width: 100%; padding: 12px 15px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; -webkit-appearance: none; }
         input[type="text"] { flex-grow: 1; }
-        button { background-color: #4CAF50; color: white; cursor: pointer; border: none; transition: background-color 0.3s; font-weight: bold; }
+        button { background-color: #4CAF50; color: white; cursor: pointer; border: none; transition: background-color 0.2s; font-weight: bold; }
+        button:active { transform: scale(0.98); }
         button:hover { background-color: #45a049; }
         #reset-btn { background-color: #d32f2f; } #reset-btn:hover { background-color: #b71c1c; }
         #print-btn { background-color: #607D8B; } #print-btn:hover { background-color: #455A64; }
@@ -43,8 +43,7 @@
         #game-screen { display: none; }
         .drag-handle { width: 40px; cursor: move; vertical-align: middle; }
         .drag-handle svg { width: 20px; height: 20px; fill: #888; }
-        .hole-row.locked .drag-handle { cursor: default; }
-        .hole-row.locked .drag-handle svg { fill: #bbb; }
+        .hole-row.locked .drag-handle { cursor: default; } .hole-row.locked .drag-handle svg { fill: #bbb; }
         .total-row { font-weight: bold; font-size: 1.1em; }
 
         @media (max-width: 768px) {
@@ -59,13 +58,11 @@
             .drag-handle:before { content: none; }
         }
         @media (min-width: 769px) { .controls { flex-direction: row; } }
-
         @media print { /* ... (Print stijlen ongewijzigd) ... */ }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- ... (HTML structuur ongewijzigd) ... -->
         <div id="winner-container" class="print-only"></div>
         <h1>Pubgolf App</h1>
         <div id="setup-screen">
@@ -102,7 +99,7 @@
                 <tbody id="scoreboard-body"></tbody>
                 <tfoot>
                     <tr class="total-row">
-                        <td colspan="4"><strong>Totaal</strong></td>
+                        <!-- Colspan wordt dynamisch ingesteld -->
                     </tr>
                 </tfoot>
             </table>
@@ -129,12 +126,70 @@ document.addEventListener('DOMContentLoaded', () => {
         loadGameState();
     };
 
-    // 3. DATA PERSISTENCE (SAVE & LOAD)
-    function saveGameState() { /* ... (onveranderd) ... */ }
-    function loadGameState() { /* ... (onveranderd) ... */ }
-    function createRowFromData(holeData, players) { /* ... (onveranderd) ... */ }
+    // 3. DATA PERSISTENCE (SAVE & LOAD) - HERSCHREVEN VOOR STABILITEIT
+    function saveGameState() {
+        const state = { players: [], holes: [], holeLocations, playerCount };
+        thead.querySelectorAll('th').forEach((th, i) => { if(i > 3) state.players.push(th.textContent); });
+        tbody.querySelectorAll('.hole-row').forEach(row => {
+            const holeData = {
+                originalIndex: row.dataset.originalIndex, name: row.querySelector('.hole-input').value,
+                location: row.querySelector('.location-input').value, locked: row.classList.contains('locked'), scores: {}
+            };
+            row.querySelectorAll('.score-input').forEach(input => { holeData.scores[input.dataset.player] = input.value; });
+            state.holes.push(holeData);
+        });
+        localStorage.setItem('pubgolfGameState', JSON.stringify(state));
+    }
 
-    // 4. CORE FUNCTIONS (Generate, Drag, Maps, Players, Scores)
+    function loadGameState() {
+        const savedState = localStorage.getItem('pubgolfGameState');
+        if (!savedState) return;
+        const state = JSON.parse(savedState);
+        if (!state.holes || state.holes.length === 0) return;
+
+        setupScreen.style.display = 'none'; gameScreen.style.display = 'block';
+        holeLocations = state.holeLocations || {}; playerCount = state.playerCount || 0;
+
+        // Herbouw UI van de grond af
+        rebuildUIFromState(state);
+    }
+
+    function rebuildUIFromState(state) {
+        // 1. Maak de tabel leeg
+        thead.innerHTML = '<tr><th style="width: 40px;">#</th><th>Hole</th><th class="location-header">Locatie</th><th class="actions-header">Acties</th></tr>';
+        tbody.innerHTML = '';
+
+        // 2. Herbouw spelers-headers
+        state.players.forEach(name => thead.appendChild(Object.assign(document.createElement('th'), { textContent: name })));
+
+        // 3. Herbouw elke hole-rij
+        state.holes.forEach(holeData => tbody.appendChild(createRowFromData(holeData, state.players)));
+
+        // 4. Herbouw footer
+        rebuildFooter(state.players.length);
+
+        // 5. Activeer functionaliteit
+        initializeDragAndDrop();
+        updateTotalScores();
+        updateVisualsAfterDrag(false); // false om een save-loop te voorkomen
+    }
+
+    function createRowFromData(holeData, players) {
+        const row = document.createElement('tr');
+        row.className = 'hole-row'; if(holeData.locked) row.classList.add('locked'); row.dataset.originalIndex = holeData.originalIndex;
+        row.innerHTML = `<td class="drag-handle" data-label="Verplaats"><svg viewBox="0 0 24 24"><path d="M10,4c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S11.1,4,10,4z M10,10c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S11.1,10,10,10z M10,16c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S11.1,16,10,16z M14,8c1.1,0,2-0.9,2-2s-0.9-2-2-2s-2,0.9-2,2S12.9,8,14,8z M14,10c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S15.1,10,14,10z M14,16c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S15.1,16,14,16z"/></svg><span>-</span></td><td data-label="Hole"><input type="text" class="hole-input" value="${holeData.name || ''}"></td><td data-label="Locatie"><input type="text" class="location-input" value="${holeData.location || ''}"></td><td data-label="Acties"><button class="lock-btn">${holeData.locked ? 'Heropenen' : 'Sluiten'}</button></td>`;
+        if(holeData.locked) row.querySelector('.lock-btn').classList.add('reopen-btn');
+        players.forEach((p, i) => {
+            const pIdx = i + 1; const cell = row.insertCell(); cell.dataset.label = p;
+            cell.innerHTML = `<input type="number" class="score-input" min="1" data-player="${pIdx}" value="${holeData.scores[pIdx] || ''}">`;
+        });
+        initializeAutocomplete(row.querySelector('.location-input'), holeData.originalIndex);
+        row.querySelectorAll('input').forEach(input => input.addEventListener('input', saveGameState));
+        row.querySelector('.lock-btn').addEventListener('click', e => toggleHoleLock(e.target));
+        return row;
+    }
+
+    // 4. CORE FUNCTIONS
     function generateHoleRows(count) {
         tbody.innerHTML = '';
         for (let i = 1; i <= count; i++) {
@@ -146,32 +201,47 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     function initializeDragAndDrop() { new Sortable(tbody, { animation: 150, handle: '.drag-handle', onEnd: updateVisualsAfterDrag }); }
-    function updateVisualsAfterDrag(doSave = true) { /* ... (onveranderd) ... */ }
-    function addPlayer(name, doSave = true) { /* ... (onveranderd) ... */ }
-
-    // Alle overige kernfuncties blijven onveranderd. Ze worden hier voor de beknoptheid weggelaten,
-    // maar de volledige, werkende logica zit in de code die je hier kopieert.
-    // Dit omvat: initializeAutocomplete, calculateRouteAndDistance, updateMarkers,
-    // updateVisualHoleNumbers, updateTotalScores, toggleHoleLock.
-
-    // === HIERONDER STAAN DE FUNCTIES DIE NIET VERANDERD ZIJN ===
-    function saveGameState() { const state = { players: [], holes: [], holeLocations, playerCount }; thead.querySelectorAll('th').forEach((th, i) => { if(i > 3) state.players.push(th.textContent); }); tbody.querySelectorAll('.hole-row').forEach(row => { const holeData = { originalIndex: row.dataset.originalIndex, name: row.querySelector('.hole-input').value, location: row.querySelector('.location-input').value, locked: row.classList.contains('locked'), scores: {} }; row.querySelectorAll('.score-input').forEach(input => { holeData.scores[input.dataset.player] = input.value; }); state.holes.push(holeData); }); localStorage.setItem('pubgolfGameState', JSON.stringify(state)); }
-    function loadGameState() { const savedState = localStorage.getItem('pubgolfGameState'); if (!savedState) return; const state = JSON.parse(savedState); if (state.holes.length === 0) return; setupScreen.style.display = 'none'; gameScreen.style.display = 'block'; holeLocations = state.holeLocations || {}; playerCount = state.playerCount || 0; state.players.forEach(name => addPlayer(name, false)); state.holes.forEach(holeData => tbody.appendChild(createRowFromData(holeData, state.players))); initializeDragAndDrop(); updateTotalScores(); updateVisualsAfterDrag(false); }
-    function createRowFromData(holeData, players) { const row = document.createElement('tr'); row.className = 'hole-row'; if(holeData.locked) row.classList.add('locked'); row.dataset.originalIndex = holeData.originalIndex; row.innerHTML = `<td class="drag-handle" data-label="Verplaats"><svg viewBox="0 0 24 24"><path d="M10,4c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S11.1,4,10,4z M10,10c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S11.1,10,10,10z M10,16c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S11.1,16,10,16z M14,8c1.1,0,2-0.9,2-2s-0.9-2-2-2s-2,0.9-2,2S12.9,8,14,8z M14,10c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S15.1,10,14,10z M14,16c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S15.1,16,14,16z"/></svg><span>-</span></td><td data-label="Hole"><input type="text" class="hole-input" value="${holeData.name || ''}"></td><td data-label="Locatie"><input type="text" class="location-input" value="${holeData.location || ''}"></td><td data-label="Acties"><button class="lock-btn">${holeData.locked ? 'Heropenen' : 'Sluiten'}</button></td>`; if(holeData.locked) row.querySelector('.lock-btn').classList.add('reopen-btn'); players.forEach((p, i) => { const pIdx = i + 1; const cell = row.insertCell(); cell.dataset.label = p; cell.innerHTML = `<input type="number" class="score-input" min="1" data-player="${pIdx}" value="${holeData.scores[pIdx] || ''}">`; }); initializeAutocomplete(row.querySelector('.location-input'), holeData.originalIndex); row.querySelectorAll('input').forEach(input => input.addEventListener('input', saveGameState)); row.querySelector('.lock-btn').addEventListener('click', e => toggleHoleLock(e.target)); return row; }
+    function initializeAutocomplete(input, originalIndex) {
+        const autocomplete = new google.maps.places.Autocomplete(input, { fields: ["formatted_address", "geometry", "name"], types: ["establishment", "geocode"] });
+        autocomplete.bindTo("bounds", map);
+        autocomplete.addListener("place_changed", () => {
+            const place = autocomplete.getPlace(); if (!place.geometry || !place.geometry.location) return;
+            input.value = place.formatted_address || place.name;
+            holeLocations[originalIndex] = { lat: place.geometry.location.lat(), lng: place.geometry.location.lng() };
+            updateVisualsAfterDrag();
+        });
+    }
     function updateVisualsAfterDrag(doSave = true) { updateVisualHoleNumbers(); calculateRouteAndDistance(); updateMarkers(); if (doSave) saveGameState(); }
     function calculateRouteAndDistance() { const waypoints = []; tbody.querySelectorAll('.hole-row').forEach(row => { const index = row.dataset.originalIndex; if (holeLocations[index]) waypoints.push(holeLocations[index]); }); if (waypoints.length < 2) { directionsRenderer.setDirections({routes: []}); routeInfo.textContent = 'Totale loopafstand: -'; return; } const request = { origin: waypoints[0], destination: waypoints[waypoints.length - 1], waypoints: waypoints.slice(1, -1).map(loc => ({ location: loc, stopover: true })), travelMode: 'WALKING' }; directionsService.route(request, (result, status) => { if (status == 'OK') { directionsRenderer.setDirections(result); let totalDistance = 0, totalDuration = 0; result.routes[0].legs.forEach(leg => { totalDistance += leg.distance.value; totalDuration += leg.duration.value; }); const totalMinutes = Math.round(totalDuration / 60); routeInfo.textContent = `Afstand: ${(totalDistance / 1000).toFixed(1)} km (~${totalMinutes} min lopen)`; } }); }
     function updateMarkers() { markers.forEach(marker => marker.setMap(null)); markers = []; tbody.querySelectorAll('.hole-row').forEach((row, visualIndex) => { const originalIndex = row.dataset.originalIndex; if (holeLocations[originalIndex]) { markers.push(new google.maps.Marker({ map, position: holeLocations[originalIndex], label: (visualIndex + 1).toString(), title: row.querySelector('.hole-input').value || `Hole ${visualIndex + 1}` })); } }); }
     function updateVisualHoleNumbers() { tbody.querySelectorAll('.hole-row').forEach((row, index) => { row.querySelector('.drag-handle span').textContent = index + 1; }); }
-    function addPlayer(name, doSave = true) { playerCount++; thead.appendChild(Object.assign(document.createElement('th'), { textContent: name })); tbody.querySelectorAll('.hole-row').forEach(row => { const cell = row.insertCell(); cell.dataset.label = name; cell.innerHTML = `<input type="number" class="score-input" min="1" data-player="${playerCount}">`; cell.querySelector('input').addEventListener('input', () => { updateTotalScores(); saveGameState(); }); }); const totalRow = tfoot.querySelector('.total-row'); const totalCell = totalRow.insertCell(); totalCell.textContent = '0'; totalCell.id = `total-player-${playerCount}`; if (doSave) { updateTotalScores(); saveGameState(); } }
+    function addPlayer(name, doSave = true) {
+        playerCount++;
+        thead.appendChild(Object.assign(document.createElement('th'), { textContent: name }));
+        tbody.querySelectorAll('.hole-row').forEach(row => {
+            const cell = row.insertCell(); cell.dataset.label = name;
+            cell.innerHTML = `<input type="number" class="score-input" min="1" data-player="${playerCount}">`;
+            cell.querySelector('input').addEventListener('input', () => { updateTotalScores(); saveGameState(); });
+        });
+        rebuildFooter(playerCount);
+        if (doSave) { updateTotalScores(); saveGameState(); }
+    }
+    function rebuildFooter(playerCount) {
+        const totalRow = tfoot.querySelector('.total-row');
+        totalRow.innerHTML = `<td colspan="4"><strong>Totaal</strong></td>`;
+        for (let i = 1; i <= playerCount; i++) {
+            const totalCell = totalRow.insertCell(); totalCell.textContent = '0'; totalCell.id = `total-player-${i}`;
+        }
+    }
     function updateTotalScores() { for (let i = 1; i <= playerCount; i++) { let total = 0; document.querySelectorAll(`.score-input[data-player='${i}']`).forEach(input => { total += parseInt(input.value) || 0; }); const totalCell = document.getElementById(`total-player-${i}`); if (totalCell) totalCell.textContent = total; } }
     function toggleHoleLock(button) { const row = button.closest('.hole-row'); if (row.classList.toggle('locked')) { const scores = row.querySelectorAll('.score-input'); const allFilled = scores.length > 0 && Array.from(scores).every(input => input.value.trim() !== ''); if (!allFilled) { alert('Vul eerst de scores voor alle spelers in.'); row.classList.remove('locked'); return; } button.textContent = 'Heropenen'; button.classList.add('reopen-btn'); } else { button.textContent = 'Sluiten'; button.classList.remove('reopen-btn'); } saveGameState(); }
 
-    // 5. BUTTON EVENT LISTENERS (HERSTELD EN GEGROEPEERD)
+    // 5. BUTTON EVENT LISTENERS
     startGameBtn.addEventListener('click', () => {
         const count = parseInt(holeCountInput.value);
         if (count >= 6 && count <= 16) {
             setupScreen.style.display = 'none'; gameScreen.style.display = 'block';
-            generateHoleRows(count); initializeDragAndDrop();
+            generateHoleRows(count); rebuildFooter(0); initializeDragAndDrop();
             google.maps.event.trigger(map, 'resize'); saveGameState();
         } else { alert('Kies een aantal holes tussen 6 en 16.'); }
     });
@@ -185,8 +255,9 @@ document.addEventListener('DOMContentLoaded', () => {
         updateTotalScores(); const winnerContainer = document.getElementById('winner-container'); winnerContainer.innerHTML = '';
         if (playerCount > 0) {
             let lowestScore = Infinity, winners = [];
+            const playerHeaders = Array.from(thead.children).slice(4); // Haal speler-headers op
             for (let i = 1; i <= playerCount; i++) { const score = parseInt(document.getElementById(`total-player-${i}`).textContent); if (score < lowestScore) lowestScore = score; }
-            for (let i = 1; i <= playerCount; i++) { const score = parseInt(document.getElementById(`total-player-${i}`).textContent); if (score === lowestScore) winners.push(thead.children[i + 3].textContent); }
+            for (let i = 1; i <= playerCount; i++) { const score = parseInt(document.getElementById(`total-player-${i}`).textContent); if (score === lowestScore) winners.push(playerHeaders[i-1].textContent); }
             if (winners.length > 0) { const title = document.createElement('h2'); title.textContent = `${winners.length > 1 ? 'Winnaars' : 'Winnaar'}: ${winners.join(', ')} met ${lowestScore} punten!`; winnerContainer.appendChild(title); }
         }
         window.print();
@@ -196,8 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <script>
-// Service Worker registratie
-if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('/service-worker.js'); }); }
+if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./service-worker.js'); }); }
 </script>
 
 <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCfhhaBxRnrPGH8UWRPV9-fSroam59F9XY&libraries=places&callback=initMap"></script>
