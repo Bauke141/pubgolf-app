@@ -58,8 +58,20 @@
         .score-input { text-align: center !important; font-weight: bold; border-radius: 20px; padding: 8px 0; width: 60px !important; }
         .drag-handle { width: 40px; cursor: move; vertical-align: middle; }
         .drag-handle svg { width: 20px; height: 20px; fill: #888; }
-        .hole-row.locked .drag-handle { cursor: default; } .hole-row.locked .drag-handle svg { fill: #bbb; }
-        #setup-screen, #game-screen { transition: opacity 0.3s; }
+        .hole-row.locked { 
+            background-color: var(--locked-bg); 
+            opacity: 0.7; /* Maakt de hele rij iets vager */
+        }
+        .hole-row.locked input {
+            pointer-events: none; /* Maakt klikken/typen onmogelijk */
+            background-color: transparent;
+        }
+        .hole-row.locked .drag-handle { 
+            cursor: default; 
+        }
+        .hole-row.locked .drag-handle svg { 
+            fill: #bbb; 
+        }        #setup-screen, #game-screen { transition: opacity 0.3s; }
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
         .modal-content { background-color: var(--element-bg); margin: 20% auto; padding: 20px; border: 1px solid var(--border-color); width: 90%; max-width: 500px; border-radius: 12px; position: relative; }
         .close-button { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
@@ -220,7 +232,11 @@ document.addEventListener('DOMContentLoaded', () => {
             <td data-label="Locatie & Nav." class="location-cell"><div style="display:flex; align-items:center; gap: 5px;"><input type="text" class="location-input" value="${holeData.location || ''}"><button class="icon-button nav-btn" title="Navigeer"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,2L4.5,20.29L5.21,21L12,18L18.79,21L19.5,20.29L12,2Z" /></svg></button></div></td>
             <td data-label="Opdracht"><input type="text" class="notes-input" placeholder="Drankje/Opdracht..." value="${holeData.notes || ''}"></td>
             <td data-label="Acties"><button class="icon-button focus-btn" title="Markeer als huidige hole"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17.3C9.03,17.3 5.7,15.35 4.17,12C5.7,8.65 9.03,6.7 12,6.7C14.97,6.7 18.3,8.65 19.83,12C18.3,15.35 14.97,17.3 12,17.3M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" /></svg></button><button class="lock-btn">${holeData.locked ? 'Heropenen' : 'Sluiten'}</button></td>`;
-        if(holeData.locked) row.querySelector('.lock-btn').classList.add('reopen-btn');
+if(holeData.locked) {
+            row.querySelector('.lock-btn').classList.add('reopen-btn');
+            // Zorg ervoor dat inputs ook gedeactiveerd zijn bij het laden
+            row.querySelectorAll('input').forEach(input => input.disabled = true);
+        }
         players.forEach((p, i) => { 
             const pIdx = i + 1; 
             const cell = row.insertCell(); 
@@ -281,8 +297,30 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         if (doSave) { saveGameState(); }
     }
-    function toggleHoleLock(button) { const row = button.closest('.hole-row'); if (row.classList.toggle('locked')) { const scores = row.querySelectorAll('.score-input'); const allFilled = scores.length > 0 && Array.from(scores).every(input => input.value.trim() !== ''); if (!allFilled) { alert('Vul eerst de scores voor alle spelers in.'); row.classList.remove('locked'); return; } button.textContent = 'Heropenen'; button.classList.add('reopen-btn'); } else { button.textContent = 'Sluiten'; button.classList.remove('reopen-btn'); } saveGameState(); }
-    function toggleHoleFocus(button) { const clickedRow = button.closest('.hole-row'); const wasActive = clickedRow.classList.contains('active-hole'); document.querySelectorAll('.active-hole').forEach(row => row.classList.remove('active-hole')); if (!wasActive) clickedRow.classList.add('active-hole'); updateMarkers(); saveGameState(); }
+    function toggleHoleLock(button) {
+        const row = button.closest('.hole-row');
+        const isLocked = row.classList.contains('locked');
+        const inputs = row.querySelectorAll('input');
+
+        if (isLocked) { // Actie: Heropenen
+            row.classList.remove('locked');
+            button.textContent = 'Sluiten';
+            button.classList.remove('reopen-btn');
+            inputs.forEach(input => input.disabled = false); // Activeer inputs weer
+        } else { // Actie: Sluiten
+            const scores = row.querySelectorAll('.score-input');
+            const allFilled = scores.length > 0 && Array.from(scores).every(input => input.value.trim() !== '');
+            if (!allFilled) {
+                alert('Vul eerst de scores voor alle spelers in voordat je de hole sluit.');
+                return;
+            }
+            row.classList.add('locked');
+            button.textContent = 'Heropenen';
+            button.classList.add('reopen-btn');
+            inputs.forEach(input => input.disabled = true); // Deactiveer inputs
+        }
+        saveGameState();
+    }    function toggleHoleFocus(button) { const clickedRow = button.closest('.hole-row'); const wasActive = clickedRow.classList.contains('active-hole'); document.querySelectorAll('.active-hole').forEach(row => row.classList.remove('active-hole')); if (!wasActive) clickedRow.classList.add('active-hole'); updateMarkers(); saveGameState(); }
     function navigateToHole(button) { const row = button.closest('.hole-row'); const location = row.querySelector('.location-input').value; if (location) window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(location)}&travelmode=walking`, '_blank'); else alert('Voer eerst een locatie in voor deze hole.'); }
     function updateDarkModeIcon(isDark) { darkModeIcon.innerHTML = isDark ? ICONS.sun : ICONS.moon; }
     
