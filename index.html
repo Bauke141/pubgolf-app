@@ -218,18 +218,21 @@ document.addEventListener('DOMContentLoaded', () => {
         row.innerHTML = `<td class="drag-handle" data-label="Verplaats"><svg viewBox="0 0 24 24"><path d="M10,4c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S11.1,4,10,4z M10,10c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S11.1,10,10,10z M10,16c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S11.1,16,10,16z M14,8c1.1,0,2-0.9,2-2s-0.9-2-2-2s-2,0.9-2,2S12.9,8,14,8z M14,10c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S15.1,10,14,10z M14,16c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S15.1,16,14,16z"/></svg><span>-</span></td>
             <td data-label="Hole"><input type="text" class="hole-input" value="${holeData.name || ''}"></td>
             <td data-label="Locatie & Nav." class="location-cell"><div style="display:flex; align-items:center; gap: 5px;"><input type="text" class="location-input" value="${holeData.location || ''}"><button class="icon-button nav-btn" title="Navigeer"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,2L4.5,20.29L5.21,21L12,18L18.79,21L19.5,20.29L12,2Z" /></svg></button></div></td>
-            <td data-label="Opdracht/Notities"><input type="text" class="notes-input" placeholder="Opdracht..." value="${holeData.notes || ''}"></td>
+            <td data-label="Opdracht"><input type="text" class="notes-input" placeholder="Drankje/Opdracht..." value="${holeData.notes || ''}"></td>
             <td data-label="Acties"><button class="icon-button focus-btn" title="Markeer als huidige hole"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17.3C9.03,17.3 5.7,15.35 4.17,12C5.7,8.65 9.03,6.7 12,6.7C14.97,6.7 18.3,8.65 19.83,12C18.3,15.35 14.97,17.3 12,17.3M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" /></svg></button><button class="lock-btn">${holeData.locked ? 'Heropenen' : 'Sluiten'}</button></td>`;
         if(holeData.locked) row.querySelector('.lock-btn').classList.add('reopen-btn');
-        players.forEach((p, i) => { const pIdx = i + 1; const cell = row.insertCell(); cell.dataset.label = p; cell.innerHTML = `<input type="number" class="score-input" min="1" data-player="${pIdx}" value="${holeData.scores[pIdx] || ''}">`; });
-        row.querySelectorAll('input').forEach(input => input.addEventListener('input', saveGameState));
+        players.forEach((p, i) => { 
+            const pIdx = i + 1; 
+            const cell = row.insertCell(); 
+            cell.dataset.label = p; 
+            cell.innerHTML = `<input type="number" class="score-input" min="1" data-player="${pIdx}" value="${holeData.scores[pIdx] || ''}" placeholder="Slagen">`; 
+        });        row.querySelectorAll('input').forEach(input => input.addEventListener('input', saveGameState));
         row.querySelector('.lock-btn').addEventListener('click', e => toggleHoleLock(e.target));
         row.querySelector('.focus-btn').addEventListener('click', e => toggleHoleFocus(e.target));
         row.querySelector('.nav-btn').addEventListener('click', e => navigateToHole(e.target));
         initializeAutocomplete(row.querySelector('.location-input'), holeData.originalIndex);
         return row;
     }
-
     // 4. CORE FUNCTIONS
     function generateHoleRows(count) {
         tbody.innerHTML = '';
@@ -238,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
             row.innerHTML = `<td class="drag-handle" data-label="Verplaats"><svg viewBox="0 0 24 24"><path d="M10,4c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S11.1,4,10,4z M10,10c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S11.1,10,10,10z M10,16c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S11.1,16,10,16z M14,8c1.1,0,2-0.9,2-2s-0.9-2-2-2s-2,0.9-2,2S12.9,8,14,8z M14,10c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S15.1,10,14,10z M14,16c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S15.1,16,14,16z"/></svg><span>${i}</span></td>
                 <td data-label="Hole"><input type="text" class="hole-input" placeholder="Hole ${i}"></td>
                 <td data-label="Locatie & Nav." class="location-cell"><div style="display:flex; align-items:center; gap: 5px;"><input type="text" class="location-input" placeholder="Zoek locatie..."><button class="icon-button nav-btn" title="Navigeer"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,2L4.5,20.29L5.21,21L12,18L18.79,21L19.5,20.29L12,2Z" /></svg></button></div></td>
-                <td data-label="Opdracht/Notities"><input type="text" class="notes-input" placeholder="Opdracht..."></td>
+                <td data-label="Opdracht"><input type="text" class="notes-input" placeholder="Drankje/Opdracht..."></td>
                 <td data-label="Acties"><button class="icon-button focus-btn" title="Markeer als huidige hole"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17.3C9.03,17.3 5.7,15.35 4.17,12C5.7,8.65 9.03,6.7 12,6.7C14.97,6.7 18.3,8.65 19.83,12C18.3,15.35 14.97,17.3 12,17.3M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" /></svg></button><button class="lock-btn">Sluiten</button></td>`;
             row.querySelectorAll('input').forEach(input => input.addEventListener('input', saveGameState));
             row.querySelector('.lock-btn').addEventListener('click', e => toggleHoleLock(e.target));
@@ -255,11 +258,25 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateVisualHoleNumbers() { tbody.querySelectorAll('.hole-row').forEach((row, index) => { row.querySelector('.drag-handle span').textContent = index + 1; }); }
     function addPlayer(name, doSave = true) {
         playerCount++;
-        const header = Object.assign(document.createElement('th'), { textContent: name, className: 'player-header' });
+        const header = Object.assign(document.createElement('th'), { 
+            textContent: name, 
+            className: 'player-header',
+            title: 'Aantal slagen' // Tooltip voor desktop
+        });
+        // Voeg '(Slagen)' toe voor de duidelijkheid
+        const smallText = document.createElement('span');
+        smallText.textContent = ' (Slagen)';
+        smallText.style.fontSize = '0.8em';
+        smallText.style.opacity = '0.8';
+        header.appendChild(smallText);
+        
         thead.appendChild(header);
+        
         tbody.querySelectorAll('.hole-row').forEach(row => {
-            const cell = row.insertCell(); cell.dataset.label = name;
-            cell.innerHTML = `<input type="number" class="score-input" min="1" data-player="${playerCount}">`;
+            const cell = row.insertCell(); 
+            // Gebruik de naam van de speler als label voor mobiele weergave
+            cell.dataset.label = name;
+            cell.innerHTML = `<input type="number" class="score-input" min="1" data-player="${playerCount}" placeholder="Slagen">`; // Placeholder toegevoegd
             cell.querySelector('input').addEventListener('input', () => { saveGameState(); });
         });
         if (doSave) { saveGameState(); }
@@ -303,9 +320,13 @@ document.addEventListener('DOMContentLoaded', () => {
     startGameBtn.addEventListener('click', () => {
         const count = parseInt(holeCountInput.value);
         setupScreen.style.display = 'none'; gameScreen.style.display = 'block';
+        // Creëer de basis header
         thead.innerHTML = '<tr><th style="width: 40px;">#</th><th>Hole</th><th>Locatie & Nav.</th><th>Opdracht</th><th>Acties</th></tr>';
+        
         generateHoleRows(count);
+        // Voeg de spelers toe aan de header vanuit de setup-lijst
         setupPlayers.forEach(name => addPlayer(name, false));
+
         initializeDragAndDrop();
         google.maps.event.trigger(map, 'resize'); 
         saveGameState();
