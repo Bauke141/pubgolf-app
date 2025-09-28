@@ -1,0 +1,16 @@
+{
+  "name": "Pubgolf Score App",
+  "short_name": "Pubgolf",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4CAF50",
+  "description": "Een scorekaart voor Pubgolf met routeplanning.",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
